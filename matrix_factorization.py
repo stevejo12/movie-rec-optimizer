@@ -53,8 +53,8 @@ class MatrixFactorization:
     sq_err = 0.0
     for u, i, r in ratings:
       pred = self.U[u - 1] @ self.V[i - 1]
-      sq_err += (r - pred) ** 2
-    reg = self.lam * (np.sum(self.U ** 2) + np.sum(self.V ** 2))
+      sq_err += 0.5 * (r - pred) ** 2
+    reg = 0.5 * self.lam * (np.sum(self.U ** 2) + np.sum(self.V ** 2))
     return float(sq_err + reg)
 
   def gradients(
