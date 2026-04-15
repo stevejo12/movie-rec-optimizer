@@ -1,4 +1,7 @@
 import numpy as np
+import math
+from evaluation import decay_learning_rate
+from scipy.optimize import minimize
 
 # stochastic gradient descent
 # @Param
@@ -20,8 +23,7 @@ def stochastic_gd(model, train_ratings, epochs=20, alpha_0=0.01, alpha_K1=0.001)
     np.random.shuffle(train_list)
 
     for u, i, r in train_list:
-      # decaying learning rate (equation 2.6)
-      alpha_k = (1 - k / K1) * alpha_0 + (k / K1) * alpha_K1
+      alpha_k = decay_learning_rate(k,K1,alpha_0, alpha_K1)
 
       # user_id and movie_id starts with 1 (not 0)
       # want to point to index #
@@ -77,3 +79,83 @@ def gd_btls(model, train_ratings: list[tuple[int, int, int]], alpha, beta, sigma
 
     history.append(new_loss)
     print(f"Epoch {iteration+1}/{max_iter}: loss = {new_loss:.4f}")
+
+# Mini Batch Gradient Descent
+def mini_batch_gd(model, train_ratings, batch_size, epochs=20, alpha_0=0.01, alpha_K1=0.001):
+  history = []
+  train_list = list(train_ratings)
+  k = 0
+  b = math.ceil(len(train_list) / batch_size) # total batch
+  K1 = epochs * b
+
+  print("=== Mini Batch Gradient Descent Iteration ===")
+  for epoch in range(epochs):
+    # make sure that the list order checked randomized every epoch
+    np.random.shuffle(train_list)
+
+    for n in range(b):
+      lower_range = n * batch_size
+      upper_range = lower_range + batch_size
+      batch = train_list[lower_range:upper_range]
+
+      grad_U, grad_V = model.gradients(batch)
+      grad_U /= len(batch)  # normalize by batch size
+      grad_V /= len(batch)
+      alpha_k = decay_learning_rate(k,K1,alpha_0, alpha_K1)
+
+      model.U -= alpha_k * grad_U
+      model.V -= alpha_k * grad_V
+
+      k += 1
+    
+    loss = model.loss(train_list)
+    history.append(loss)
+    print(f"Epoch {epoch+1}/{epochs}: loss = {loss:.4f}") 
+
+# @Parameter
+def bfgs(model, train_ratings, max_iter=50):
+  history = []
+  train_list = list(train_ratings)
+
+  def loss_and_grad(flat_vector):
+    # unflatten into U and V
+    U = flat_vector[:model.n_users * model.k].reshape(model.n_users, model.k)
+    V = flat_vector[model.n_users * model.k:].reshape(model.n_items, model.k)
+    
+    # set on model
+    model.set_params(U, V)
+    
+    # compute loss and gradients using your existing methods
+    loss = model.loss(train_list)
+    grad_U, grad_V = model.gradients(train_list)
+    
+    # flatten gradients back into one vector
+    flat_grad = np.concatenate([grad_U.flatten(), grad_V.flatten()])
+    
+    return loss, flat_grad
+  
+  def callback(flat_vector):
+    loss = model.loss(train_list)
+    history.append(loss)
+    print(f"Iteration {len(history)}/{max_iter}: loss = {loss:.4f}")
+
+  print("=== BFGS Algorithm Iteration ===")
+  flatten_matrix = np.concatenate([model.U.ravel(), model.V.ravel()])
+
+  result = minimize(
+    loss_and_grad,
+    flatten_matrix,
+    method='L-BFGS-B', # (Limited-memory) BFGS (Bounded) -> note: bounded is not used here.
+    jac=True,          # loss_and_grad returns both loss and gradient
+    callback=callback,
+    options={'maxiter': max_iter, 'disp': True}
+  )
+  
+  # unflatten the matrix
+  split = model.n_users * model.k
+  U = result.x[:split].reshape(model.n_users, model.k)
+  V = result.x[split:].reshape(model.n_items, model.k)
+
+  model.set_params(U,V)
+
+  return history
