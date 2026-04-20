@@ -2,6 +2,7 @@ import time
 from dataloader import DataLoader
 from matrix_factorization import MatrixFactorization
 from optimizer import stochastic_gd, gd_btls, mini_batch_gd, bfgs
+from generate_plot import graph_plot
 from evaluation import rmse
 
 loader = DataLoader(filepath="u.data", seed=42)
@@ -23,7 +24,7 @@ print(f"Time taken to run Stochastic Gradient Descent: {elapsed_sgd:.2f}")
 
 mf_model.set_params(U_init, V_init)
 start_gdbtls = time.time()
-gd_btls(mf_model, loader.train_ratings, 1, 0.5, 0.1)
+history_gdbtls = gd_btls(mf_model, loader.train_ratings, 1, 0.5, 0.1)
 elapsed_gdbtls = time.time() - start_gdbtls
 
 test_rmse = rmse(mf_model, loader.test_ratings)
@@ -32,7 +33,7 @@ print(f"Time taken to run Gradient Descent with BackTracking Line Search: {elaps
 
 mf_model.set_params(U_init, V_init)
 start_mb = time.time()
-mini_batch_gd(mf_model, loader.train_ratings, 256, 100, 1.0, 0.01)
+history_mb = mini_batch_gd(mf_model, loader.train_ratings, 256, 100, 1.0, 0.01)
 elapsed_mb = time.time() - start_mb
 
 test_rmse = rmse(mf_model, loader.test_ratings)
@@ -41,9 +42,11 @@ print(f"Time taken to run Mini Batch Gradient Descent: {elapsed_mb:.2f}")
 
 mf_model.set_params(U_init, V_init)
 start_bfgs = time.time()
-bfgs(mf_model, loader.train_ratings, 50)
+history_bfgs = bfgs(mf_model, loader.train_ratings, 50)
 elapsed_bfgs = time.time() - start_bfgs
 
 test_rmse = rmse(mf_model, loader.test_ratings)
 print(f"Test RMSE for BFGS Algorithm: {test_rmse:.4f}")
 print(f"Time taken to run BFGS Algorithm: {elapsed_bfgs:.2f}")
+
+graph_plot(history, elapsed_sgd, history_gdbtls, elapsed_gdbtls, history_mb, elapsed_mb, history_bfgs, elapsed_bfgs)

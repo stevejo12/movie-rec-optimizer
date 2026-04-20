@@ -80,6 +80,8 @@ def gd_btls(model, train_ratings: list[tuple[int, int, int]], alpha, beta, sigma
     history.append(new_loss)
     print(f"Epoch {iteration+1}/{max_iter}: loss = {new_loss:.4f}")
 
+  return history
+
 # Mini Batch Gradient Descent
 def mini_batch_gd(model, train_ratings, batch_size, epochs=20, alpha_0=0.01, alpha_K1=0.001):
   history = []
@@ -111,6 +113,8 @@ def mini_batch_gd(model, train_ratings, batch_size, epochs=20, alpha_0=0.01, alp
     loss = model.loss(train_list)
     history.append(loss)
     print(f"Epoch {epoch+1}/{epochs}: loss = {loss:.4f}") 
+
+  return history
 
 # @Parameter
 def bfgs(model, train_ratings, max_iter=50):
