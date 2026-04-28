@@ -57,8 +57,8 @@ def gd_btls(model, train_ratings: list[tuple[int, int, int]], alpha, beta, sigma
   max_iter = 100
 
   print("=== Gradient Descent with Backtracking Line Search Iteration ===")
-  alpha_k = alpha
   for iteration in range(max_iter):
+    alpha_k = alpha
     grad_U, grad_V = model.gradients(train_ratings) 
     grad_norm_sq = np.sum(grad_U ** 2) + np.sum(grad_V ** 2)
     old_loss = model.loss(train_list)

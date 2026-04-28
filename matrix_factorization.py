@@ -64,12 +64,12 @@ class MatrixFactorization:
     grad_V = np.zeros_like(self.V)
     if not ratings:
       return grad_U, grad_V
-    grad_U += 2 * self.lam * self.U
-    grad_V += 2 * self.lam * self.V
+    grad_U += self.lam * self.U
+    grad_V += self.lam * self.V
     for u, i, r in ratings:
       u_idx = u - 1
       i_idx = i - 1
       err = r - self.U[u_idx] @ self.V[i_idx]
-      grad_U[u_idx] += -2 * err * self.V[i_idx]
-      grad_V[i_idx] += -2 * err * self.U[u_idx]
+      grad_U[u_idx] += -err * self.V[i_idx]
+      grad_V[i_idx] += -err * self.U[u_idx]
     return grad_U, grad_V
